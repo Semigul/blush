@@ -99,13 +99,29 @@ async function nextRound() {
   }
 }
 
+async function resetGame() {
+  if (!confirm('Återställ spelet till runda 1? Deltagarna behåller sina länkar.')) return;
+  try {
+    const gameId = await ensureHostedGame();
+    const snapshots = await getDocs(playersRef(gameId));
+    const players = snapshots.docs.map(snapshot => snapshot.data().name);
+    if (players.length < 3) return setup();
+    await setDoc(gameRef(gameId), { hostUid, round: 0, updatedAt: serverTimestamp() }, { merge: true });
+    await startRound(players);
+  } catch (error) {
+    console.error(error);
+    alert('Kunde inte återställa spelet. Försök igen.');
+  }
+}
+
 function lobby(gameId, players, round) {
   const cards = players.map((player, index) => { const url = playerUrl(gameId, player.id); return `<article class="player-card"><div class="avatar">${emojis[index % emojis.length]}</div><h3>${player.name}</h3><p>RUNDA ${round} · Hemlig länk redo</p><div class="card-actions"><button class="button secondary copy" data-url="${url}">Kopiera</button><button class="button open" data-url="${url}">Visa</button></div></article>`; }).join('');
   showNewRoundButton(true);
-  shell(`<div class="brand"><span class="brand-mark">✦</span> Midnattsgänget <span class="round-label">RUNDA ${round}</span></div><div class="game-top"><div><div class="eyebrow">Omgången är klar</div><h1>Dela ut rollerna</h1></div><span class="count">${players.length} SPELARE</span></div><div class="link-grid">${cards}</div><section class="instructions"><span>🤫</span><div><strong>Skicka länkarna en och en</strong><p>Varje deltagarlänk är permanent. När du startar nästa runda får deltagaren automatiskt sin nya roll när länken öppnas eller laddas om.</p></div></section><div class="footer-action"><button class="button secondary" id="again">← Ändra deltagare</button></div>`);
+  shell(`<div class="brand"><span class="brand-mark">✦</span> Midnattsgänget <span class="round-label">RUNDA ${round}</span></div><div class="game-top"><div><div class="eyebrow">Omgången är klar</div><h1>Dela ut rollerna</h1></div><span class="count">${players.length} SPELARE</span></div><div class="link-grid">${cards}</div><section class="instructions"><span>🤫</span><div><strong>Skicka länkarna en och en</strong><p>Varje deltagarlänk är permanent. När du startar nästa runda får deltagaren automatiskt sin nya roll när länken öppnas eller laddas om.</p></div></section><div class="footer-action"><button class="button secondary" id="again">← Ändra deltagare</button><button class="button secondary" id="reset-game">Återställ till runda 1</button></div>`);
   document.querySelectorAll('.copy').forEach(button => button.onclick = async () => { try { await navigator.clipboard.writeText(button.dataset.url); const old = button.textContent; button.textContent = 'Kopierad!'; setTimeout(() => button.textContent = old, 1400); } catch { prompt('Kopiera länken:', button.dataset.url); } });
   document.querySelectorAll('.open').forEach(button => button.onclick = () => window.open(button.dataset.url, '_blank'));
   document.querySelector('#again').onclick = () => setup(players.map(player => player.name));
+  document.querySelector('#reset-game').onclick = resetGame;
 }
 
 function renderRoleCard(data) {
