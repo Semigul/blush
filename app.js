@@ -45,8 +45,11 @@ function playerUrl(gameId, playerId) { return `${location.href.split('#')[0]}#sp
 async function ensureHostedGame() {
   if (!hostedGameId) { hostedGameId = randomId(); localStorage.setItem(hostGameKey, hostedGameId); }
   const reference = gameRef(hostedGameId);
-  const snapshot = await getDoc(reference);
-  if (!snapshot.exists()) await setDoc(reference, { hostUid, round: 0, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  try {
+    const snapshot = await getDoc(reference);
+    if (snapshot.exists()) return hostedGameId;
+  } catch {}
+  await setDoc(reference, { hostUid, round: 0, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
   return hostedGameId;
 }
 
