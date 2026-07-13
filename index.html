@@ -17,12 +17,15 @@
       .round-label { font: 500 10px "DM Mono", monospace; letter-spacing: .08em; color: var(--purple); background: #f3eaff; padding: 6px 8px; border-radius: 8px; }
       .new-round { position: fixed; top: 20px; right: 22px; z-index: 2; border: 0; border-radius: 12px; padding: 10px 13px; background: #fff; color: #a92460; box-shadow: 0 8px 24px rgba(92,33,69,.12); font: 800 13px Nunito, sans-serif; cursor: pointer; }
       .new-round:hover { background: #ffe4f0; }
-      @media (max-width: 520px) { .new-round { top: 14px; right: 16px; } }
+      .reset-game { position: fixed; top: 66px; right: 22px; z-index: 2; border: 0; border-radius: 12px; padding: 10px 13px; background: #ffe4f0; color: #a92460; box-shadow: 0 8px 24px rgba(92,33,69,.12); font: 800 13px Nunito, sans-serif; cursor: pointer; }
+      .reset-game:hover { background: #ffd1e4; }
+      @media (max-width: 520px) { .new-round { top: 14px; right: 16px; } .reset-game { top: 60px; right: 16px; } }
     </style>
   </head>
   <body>
     <main id="app"></main>
     <button class="new-round" id="new-round" type="button">↻ Ny runda</button>
+    <button class="reset-game" id="reset-game-global" type="button">Starta om spelet</button>
     <script type="module" src="app.js"></script>
   </body>
 </html>

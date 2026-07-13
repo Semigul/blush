@@ -16,6 +16,7 @@ const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
 const app = document.querySelector('#app');
 const newRoundButton = document.querySelector('#new-round');
+const resetGameButton = document.querySelector('#reset-game-global');
 const hostGameKey = 'blush-bluff:host-game';
 const emojis = ['🦊', '🦇', '🐈‍⬛', '🦉', '🐺', '🪩', '🦄', '🍒', '💿', '🛼', '🧃', '🌙'];
 
@@ -38,7 +39,7 @@ function playersRef(gameId) { return collection(db, 'games', gameId, 'players');
 function playerRef(gameId, playerId) { return doc(db, 'games', gameId, 'players', playerId); }
 function roleSet(count) { const set = ['ulv', 'siare', 'bråkmakare']; while (set.length < count) set.push(set.length < 5 ? 'sömnig' : 'bybo'); return set.slice(0, count).sort(() => Math.random() - .5); }
 function nextRoleSet(count, previousRoles = []) { if (previousRoles.length !== count) return roleSet(count); let best = roleSet(count); let mostChanges = best.filter((role, index) => role !== previousRoles[index]).length; for (let attempt = 0; attempt < 200 && mostChanges < count; attempt += 1) { const candidate = roleSet(count); const changes = candidate.filter((role, index) => role !== previousRoles[index]).length; if (changes > mostChanges) { best = candidate; mostChanges = changes; } } return best; }
-function showNewRoundButton(show = true) { newRoundButton.classList.toggle('hidden', !show); }
+function showNewRoundButton(show = true) { newRoundButton.classList.toggle('hidden', !show); resetGameButton.classList.toggle('hidden', !show); }
 function hostedPlayerKey(name) { return `blush-bluff:player:${hostedGameId}:${normalizeName(name)}`; }
 function hostedPlayerId(name) { const key = hostedPlayerKey(name); let id = localStorage.getItem(key); if (!id) { id = randomId(); localStorage.setItem(key, id); } return id; }
 function playerUrl(gameId, playerId) { return `${location.href.split('#')[0]}#spelare=${gameId}.${playerId}`; }
@@ -117,11 +118,10 @@ async function resetGame() {
 function lobby(gameId, players, round) {
   const cards = players.map((player, index) => { const url = playerUrl(gameId, player.id); return `<article class="player-card"><div class="avatar">${emojis[index % emojis.length]}</div><h3>${player.name}</h3><p>RUNDA ${round} · Hemlig länk redo</p><div class="card-actions"><button class="button secondary copy" data-url="${url}">Kopiera</button><button class="button open" data-url="${url}">Visa</button></div></article>`; }).join('');
   showNewRoundButton(true);
-  shell(`<div class="brand"><span class="brand-mark">✦</span> Midnattsgänget <span class="round-label">RUNDA ${round}</span></div><div class="game-top"><div><div class="eyebrow">Omgången är klar</div><h1>Dela ut rollerna</h1></div><span class="count">${players.length} SPELARE</span></div><div class="link-grid">${cards}</div><section class="instructions"><span>🤫</span><div><strong>Skicka länkarna en och en</strong><p>Varje deltagarlänk är permanent. När du startar nästa runda får deltagaren automatiskt sin nya roll när länken öppnas eller laddas om.</p></div></section><div class="footer-action"><button class="button secondary" id="again">← Ändra deltagare</button><button class="button secondary" id="reset-game">Starta om spelet</button></div>`);
+  shell(`<div class="brand"><span class="brand-mark">✦</span> Midnattsgänget <span class="round-label">RUNDA ${round}</span></div><div class="game-top"><div><div class="eyebrow">Omgången är klar</div><h1>Dela ut rollerna</h1></div><span class="count">${players.length} SPELARE</span></div><div class="link-grid">${cards}</div><section class="instructions"><span>🤫</span><div><strong>Skicka länkarna en och en</strong><p>Varje deltagarlänk är permanent. När du startar nästa runda får deltagaren automatiskt sin nya roll när länken öppnas eller laddas om.</p></div></section><div class="footer-action"><button class="button secondary" id="again">← Ändra deltagare</button></div>`);
   document.querySelectorAll('.copy').forEach(button => button.onclick = async () => { try { await navigator.clipboard.writeText(button.dataset.url); const old = button.textContent; button.textContent = 'Kopierad!'; setTimeout(() => button.textContent = old, 1400); } catch { prompt('Kopiera länken:', button.dataset.url); } });
   document.querySelectorAll('.open').forEach(button => button.onclick = () => window.open(button.dataset.url, '_blank'));
   document.querySelector('#again').onclick = () => setup(players.map(player => player.name));
-  document.querySelector('#reset-game').onclick = resetGame;
 }
 
 function renderRoleCard(data) {
@@ -140,6 +140,7 @@ function playerPage(gameId, playerId) {
 function legacyRolePage(data) { renderRoleCard({ name: data.n, role: data.r, round: 1 }); }
 
 newRoundButton.onclick = nextRound;
+resetGameButton.onclick = resetGame;
 const params = new URLSearchParams(location.hash.slice(1));
 const playerToken = params.get('spelare');
 if (playerToken && playerToken.includes('.')) { const [gameId, playerId] = playerToken.split('.'); playerPage(gameId, playerId); }
