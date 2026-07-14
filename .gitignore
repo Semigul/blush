@@ -1,5 +1,6 @@
 .DS_Store
 .codex/
+agent-task.md
 # Logs
 logs
 *.log

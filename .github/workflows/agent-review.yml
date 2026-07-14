@@ -1,0 +1,51 @@
+name: Agent – granska pull request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  review:
+    # Hemligheten används aldrig för PR:ar från forks.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    outputs:
+      review: ${{ steps.codex.outputs.final-message }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          persist-credentials: false
+      - name: Hämta jämförelsegrenen
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: git fetch --no-tags origin "$BASE_REF" "+refs/pull/$PR_NUMBER/head"
+      - name: Låt Codex granska diffen
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ':read-only'
+          prompt: |
+            Granska endast ändringarna i denna pull request. Leta efter buggar, trasiga deltagarlänkar,
+            säkerhetsrisker, regressionsrisker och saknade tester. Svara på svenska i korta punkter.
+            Skriv "Godkänd av agent" om du inte hittar något konkret.
+      - name: Publicera agentens granskning
+        if: steps.codex.outputs.final-message != ''
+        uses: actions/github-script@v7
+        env:
+          REVIEW: ${{ steps.codex.outputs.final-message }}
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `## 🤖 Agentgranskning\n\n${process.env.REVIEW}`,
+            });
