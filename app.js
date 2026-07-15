@@ -168,3 +168,41 @@ async function restoreHostSetup() {
     setup();
   }
 }
+// Reveal card role toggle fix
+function renderRevealCard(roleKey) {
+  const role = roles[roleKey];
+  let revealed = false;
+  shell(`
+    <div class="role-page">
+      <article class="role-card">
+        <div class="card-seal">${role.icon}</div>
+        <div class="tag">Hemlig roll</div>
+        <h1>${role.name}</h1>
+        <div class="intro">${role.text}</div>
+        <button class="button reveal" id="toggle-reveal">Visa roll</button>
+        <div class="secret" id="role-secret">
+          <img src="${role.image}" alt="Illustration för ${role.name}" class="private-role-art">
+          <div class="role-secret-copy">
+            <h2>${role.name}</h2>
+            <p>${role.text}</p>
+          </div>
+        </div>
+        <div class="tiny">Din roll är dold tills du klickar "Visa roll".</div>
+      </article>
+    </div>
+  `);
+  const btn = document.getElementById('toggle-reveal');
+  const secret = document.getElementById('role-secret');
+  btn.addEventListener('click', () => {
+    revealed = !revealed;
+    if (revealed) {
+      secret.classList.add('show');
+      btn.textContent = 'Dölj roll';
+    } else {
+      secret.classList.remove('show');
+      btn.textContent = 'Visa roll';
+    }
+  });
+  secret.classList.remove('show');
+}
+// Använd renderRevealCard(roleKey) där revealkortet ska visas
