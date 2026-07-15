@@ -2,12 +2,13 @@
 
 ## Arbeta från GitHub Projects
 
-1. Skapa en **Story** från mallen och fyll i mål, acceptanskriterier och avgränsningar.
-2. Lägg Issuen i Project-status **Ready for agent**.
-3. Läs storyn en sista gång och lägg etiketten `agent:ready`.
-4. Agenten skapar en pull request. Läs agentgranskningen och kontrollera sidan själv.
-5. Merga bara när CI är grön och du vill godkänna ändringen.
-6. Vid en planerad release: kör **Release – Blush & Bluff** från Actions. Produktion ska alltid kräva ditt godkännande.
+1. Skapa en **One-liner → story** om du bara har en idé. Story Architect kommenterar ett komplett utkast.
+2. Uppdatera Issuen med utkastet, lägg till etiketten `story` och fyll i eventuella öppna frågor.
+3. Lägg Issuen i Project-status **Ready for agent**.
+4. Läs storyn en sista gång och lägg etiketten `agent:ready`.
+5. Agenten skapar en pull request. Läs agentgranskningen och kontrollera sidan själv.
+6. Merga bara när CI är grön och du vill godkänna ändringen.
+7. Vid en planerad release: kör **Release – Blush & Bluff** från Actions. Produktion ska alltid kräva ditt godkännande.
 
 ## Säkerhetsregler
 

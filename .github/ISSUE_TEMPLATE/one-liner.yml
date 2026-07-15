@@ -1,0 +1,13 @@
+name: One-liner → story
+description: Skriv en idé på en rad. Story Architect gör resten.
+title: "Idé: "
+labels: ["story:expand"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Din idé
+      description: Skriv fritt. En mening räcker.
+      placeholder: Jag vill att ...
+    validations:
+      required: true

@@ -1,0 +1,76 @@
+name: Agent – skapa story från one-liner
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  expand-story:
+    # Bara repoägaren kan starta en kostnadsbelagd agentkörning.
+    if: github.event.label.name == 'story:expand' && github.actor == 'Semigul' && github.event.issue.pull_request == null
+    runs-on: ubuntu-latest
+    outputs:
+      story: ${{ steps.codex.outputs.final-message }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Ge agenten idén utan att lägga Issue-text i ett shell-kommando
+        uses: actions/github-script@v7
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        with:
+          script: |
+            const fs = require('fs');
+            fs.writeFileSync('story-brief.md', `# One-liner\n\nIssue #${process.env.ISSUE_NUMBER}: ${process.env.ISSUE_TITLE}\n\n${process.env.ISSUE_BODY || ''}`);
+      - name: Låt Story Architect skapa ett förslag
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          allow-users: Semigul
+          permission-profile: ':read-only'
+          prompt: |
+            Läs story-brief.md och skapa ett tydligt story-förslag på svenska för Blush & Bluff.
+            Svara ENDAST i följande Markdown-struktur:
+            ## Mål
+            ## Bakgrund
+            ## Omfattning
+            ## Utanför omfattning
+            ## Acceptanskriterier
+            ## Testplan
+            ## Risker
+            ## Öppna frågor
+            Hitta inte på produktkrav. Om information saknas, skriv en fråga under Öppna frågor.
+            Detta är planering: ändra inga filer och föreslå ingen release.
+      - name: Publicera story-utkastet
+        if: steps.codex.outputs.final-message != ''
+        uses: actions/github-script@v7
+        env:
+          STORY: ${{ steps.codex.outputs.final-message }}
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: `# ✨ Story Architect – utkast\n\n${process.env.STORY}\n\n---\nNär du är nöjd: uppdatera storyn, lägg till etiketten \`story\`, och använd först därefter \`agent:ready\`.`,
+            });
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              labels: ['needs-refinement'],
+            });
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              name: 'story:expand',
+            });
