@@ -17,7 +17,87 @@ jobs:
         with:
           script: |
             const issue = context.payload.issue;
-            const story = '# ' + issue.title + '\n\n## Mal\n' + (issue.body || 'Beskriv målet') + '\n\n## Bakgrund\nVarför behöver vi detta?\n\n## Omfattning\nVad ingår?\n\n## Utanför omfattning\nVad ingår INTE?\n\n## Acceptanskriterier\n- Kriterium 1\n- Kriterium 2\n- Kriterium 3\n\n## Testplan\nHur testar vi detta?\n\n## Risker\nVilka risker finns?\n\n## Oppna fragor\n- Fråga?';
+            const title = issue.title.toLowerCase();
+            const body = issue.body || '';
+            
+            // Intelligentanalys av issue-titeln
+            function analyzeAndRefine() {
+              let mal = '';
+              let background = '';
+              let scope = '';
+              let outOfScope = '';
+              let criteria = [];
+              let testPlan = '';
+              let risks = [];
+              
+              // Detektera issue-typ och generera relevant innehål
+              if (title.includes('ta bort') || title.includes('radera') || title.includes('ta') && title.includes('bort')) {
+                mal = 'Reducera komplexitet och förbättra användarupplevelse genom att ta bort överflödig eller redundant information.';
+                background = 'Det finns för mycket information eller visuella element som distraherar från det primära syftet. En förenkling förbättrar UX och prestanda.';
+                scope = 'Granska befintligt innehål/design, identifiera överflödig text/element, ta bort utan att påverka funktionalitet.';
+                outOfScope = 'Att omdesigna layouten eller ändra övriga funktioner.';
+                criteria = ['Överflödig text/element borttagen', 'Viktigt innehål kvarstår', 'Ingen funktionalitet påverkad', 'Tester passerar'];
+                testPlan = 'Visuell granskning av resultat, regression testing av relaterad funktionalitet, användartestning för att verifiera förbättrad klarhet.';
+                risks = ['Risk: Viktigt innehål tas bort av misstag', 'Risk: Bruten layout om element är beroende'];
+              } else if (title.includes('lägga till') || title.includes('ny') || title.includes('implementera')) {
+                mal = 'Implementera ny funktionalitet eller feature för att tillgodose användarnas behov.';
+                background = 'Denna feature kommer att förbättra produkten genom att ' + body.substring(0, 50) + '...';
+                scope = 'Implementering av ny feature inklusive testning och dokumentation.';
+                outOfScope = 'Ändringar av befintlig funktionalitet eller design.';
+                criteria = ['Feature implementerad enligt spec', 'Alla tests grönmarkerade', 'Dokumenterad', 'Code reviewed'];
+                testPlan = 'Unit tests, integration tests, manuell testning av use cases, edge case testing.';
+                risks = ['Risk: Performance impact', 'Risk: Incompatibility med befintlig kod'];
+              } else if (title.includes('fixa') || title.includes('bug') || title.includes('fel')) {
+                mal = 'Åtgärda buggen för att återställa funktionalitet och förbättra stabilitet.';
+                background = 'En bug upptäcktes som ' + body.substring(0, 50) + '... Detta påverkar användaren negativt.';
+                scope = 'Identifiera rotorsak, applicera fix, validera att buggen är löst.';
+                outOfScope = 'Större refactorering eller designändringar.';
+                criteria = ['Bug reproducerad', 'Rootcause identifierad och dokumenterad', 'Fix applicerad', 'Tests passerar', 'Ingen regression'];
+                testPlan = 'Reproducera buggen, verifiera fix löser problemet, regression testing, edge case testing.';
+                risks = ['Risk: Fix introducerar ny bug', 'Risk: Inte tillräcklig testning'];
+              } else if (title.includes('refactor') || title.includes('omstruktur') || title.includes('uppdatera')) {
+                mal = 'Förbättra kodkvalitet och maintainability utan att ändra funktionalitet.';
+                background = 'Nuvarande kod behöver refaktoreras för ' + body.substring(0, 50) + '... för att förbättra läsbarhet och maintainability.';
+                scope = 'Refaktoring av relevant kod, uppdatering av tests, ingen funktionalitetsförändring.';
+                outOfScope = 'Nya features eller design-ändringar.';
+                criteria = ['Kod refaktorerad', 'Tests passerar oförändrade', 'Improved readability', 'Code review approved'];
+                testPlan = 'Körning av befintlig testsuite, manuell verifiering att beteende är identiskt, performance testing.';
+                risks = ['Risk: Oavsiktlig funktionalitetsförändring', 'Risk: Test-failures'];
+              } else {
+                // Default generic story
+                mal = body.substring(0, 100) || 'Beskriv målet för denna task';
+                background = 'Varför behöver vi detta?';
+                scope = 'Vad ingår i denna task?';
+                outOfScope = 'Vad ingår INTE?';
+                criteria = ['Acceptance criterion 1', 'Acceptance criterion 2'];
+                testPlan = 'Beskriv testning som behövs';
+                risks = ['Potentiell risk 1'];
+              }
+              
+              return {
+                mal: mal,
+                background: background,
+                scope: scope,
+                outOfScope: outOfScope,
+                criteria: criteria,
+                testPlan: testPlan,
+                risks: risks
+              };
+            }
+            
+            const story_data = analyzeAndRefine();
+            const criteria_text = story_data.criteria.map(c => '- ' + c).join('\n');
+            const risks_text = story_data.risks.map(r => '- ' + r).join('\n');
+            
+            const story = '# ' + issue.title + '\n\n' +
+              '## Mal\n' + story_data.mal + '\n\n' +
+              '## Bakgrund\n' + story_data.background + '\n\n' +
+              '## Omfattning\n' + story_data.scope + '\n\n' +
+              '## Utanfor omfattning\n' + story_data.outOfScope + '\n\n' +
+              '## Acceptanskriterier\n' + criteria_text + '\n\n' +
+              '## Testplan\n' + story_data.testPlan + '\n\n' +
+              '## Risker\n' + risks_text + '\n\n' +
+              '## Oppna fragor\n- ?';
             
             await github.rest.issues.update({
               owner: context.repo.owner,
@@ -30,7 +110,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue.number,
-              body: 'Story genererad! Granska och uppdatera delar som behover justering. Lag sedan etiketten "story".'
+              body: 'Story Architect har refinerat din idé automatiskt! Granska innehållet nedan och uppdatera som behövs. Lägg sedan till etiketten "story" när du är nöjd.'
             });
 
             await github.rest.issues.addLabels({
