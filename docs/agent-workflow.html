@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Blush &amp; Bluff – Agentflöde</title>
+    <style>
+      :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #2b1b25; background: #fff8f8; }
+      body { margin: 0; padding: 32px 18px 48px; }
+      main { max-width: 1000px; margin: auto; }
+      h1 { margin: 0; color: #851e50; }
+      .intro { color: #654855; max-width: 66ch; }
+      svg { width: 100%; height: auto; display: block; margin: 28px 0; }
+      .node { fill: #fff; stroke: #d895ae; stroke-width: 2; }
+      .node.user { fill: #fde5ef; stroke: #b52c65; }
+      .node.agent { fill: #f6edff; stroke: #8251aa; }
+      .node.system { fill: #fff4dc; stroke: #b97816; }
+      .node.release { fill: #e8f6ef; stroke: #258353; }
+      .arrow { stroke: #9f687c; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+      .label { font-size: 16px; font-weight: 700; text-anchor: middle; fill: #2b1b25; }
+      .small { font-size: 13px; font-weight: 500; }
+      section { margin-top: 28px; }
+      table { width: 100%; border-collapse: collapse; background: white; }
+      th, td { text-align: left; padding: 12px; border-bottom: 1px solid #f0dce4; vertical-align: top; }
+      th { color: #851e50; }
+      .note { background: #fde5ef; border-left: 4px solid #b52c65; padding: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Blush &amp; Bluff – Agentflöde</h1>
+      <p class="intro">Från en kort idé till en testad och publicerad ändring. Du behåller alltid beslutet om granskning, merge och release.</p>
+
+      <svg viewBox="0 0 940 1290" role="img" aria-labelledby="diagram-title diagram-description">
+        <title id="diagram-title">Arbetsflöde för Blush och Bluff</title>
+        <desc id="diagram-description">Ett flöde från idé, via story och kodgranskning, till publicering och release.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#9f687c" /></marker>
+        </defs>
+
+        <path class="arrow" d="M470 115V155"/><path class="arrow" d="M470 255V295"/><path class="arrow" d="M470 395V435"/>
+        <path class="arrow" d="M470 535V575"/><path class="arrow" d="M470 675V715"/><path class="arrow" d="M470 815V855"/>
+        <path class="arrow" d="M470 955V995"/><path class="arrow" d="M470 1095V1135"/><path class="arrow" d="M470 1235V1270"/>
+
+        <g transform="translate(170 25)"><rect class="node user" width="600" height="90" rx="16"/><text class="label" x="300" y="39">Du skriver en idé</text><text class="label small" x="300" y="63">GitHub Projects eller en Issue</text></g>
+        <g transform="translate(170 155)"><rect class="node agent" width="600" height="100" rx="16"/><text class="label" x="300" y="41">Story Architect-agent</text><text class="label small" x="300" y="67">mål · acceptanskriterier · testplan · frågor</text></g>
+        <g transform="translate(170 295)"><rect class="node user" width="600" height="100" rx="16"/><text class="label" x="300" y="41">Du granskar och förfinar storyn</text><text class="label small" x="300" y="67">Sätt status Ready for agent + etiketten agent:ready</text></g>
+        <g transform="translate(170 435)"><rect class="node agent" width="600" height="100" rx="16"/><text class="label" x="300" y="41">Implementeringsagent (Codex)</text><text class="label small" x="300" y="67">skriver kod på en egen branch</text></g>
+        <g transform="translate(170 575)"><rect class="node" width="600" height="100" rx="16"/><text class="label" x="300" y="41">Pull request</text><text class="label small" x="300" y="67">förslaget väntar på automatiska kontroller och din granskning</text></g>
+        <g transform="translate(170 715)"><rect class="node system" width="600" height="100" rx="16"/><text class="label" x="300" y="41">CI + Review-agent</text><text class="label small" x="300" y="67">kontrollerar filer och granskar koden</text></g>
+        <g transform="translate(170 855)"><rect class="node user" width="600" height="100" rx="16"/><text class="label" x="300" y="41">Du granskar och slår ihop PR</text><text class="label small" x="300" y="67">bara när du är nöjd och CI är grön</text></g>
+        <g transform="translate(170 995)"><rect class="node system" width="600" height="100" rx="16"/><text class="label" x="300" y="41">GitHub Pages</text><text class="label small" x="300" y="67">publicerar automatiskt från main</text></g>
+        <g transform="translate(170 1135)"><rect class="node release" width="600" height="100" rx="16"/><text class="label" x="300" y="41">Release-agent + ditt Production-godkännande</text><text class="label small" x="300" y="67">skapar GitHub Release med versionstag</text></g>
+      </svg>
+
+      <section>
+        <h2>Vem gör vad?</h2>
+        <table>
+          <thead><tr><th>System eller agent</th><th>Ansvar</th></tr></thead>
+          <tbody>
+            <tr><td>Du</td><td>Skriver idéer, förfinar stories, godkänner pull requests och releaser.</td></tr>
+            <tr><td>Story Architect</td><td>Gör en komplett utvecklingsstory av en kort idé.</td></tr>
+            <tr><td>Implementeringsagent</td><td>Skriver kod och skapar en pull request.</td></tr>
+            <tr><td>CI</td><td>Kontrollerar JavaScript, manifest och rollbilder.</td></tr>
+            <tr><td>Review-agent</td><td>Granskar pull requesten och lämnar kommentarer.</td></tr>
+            <tr><td>GitHub Pages</td><td>Publicerar ändringar som har slagits ihop till main.</td></tr>
+          </tbody>
+        </table>
+      </section>
+      <p class="note">GitHub Project visar planering och status. Etiketterna <code>story:expand</code> och <code>agent:ready</code> startar agentflödena.</p>
+    </main>
+  </body>
+</html>

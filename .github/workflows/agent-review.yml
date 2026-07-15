@@ -1,4 +1,4 @@
-name: Agent – granska pull request
+name: Agent – förbereda granskning
 
 on:
   pull_request:
@@ -10,14 +10,12 @@ permissions:
   pull-requests: write
 
 jobs:
-  review:
+  prepare-review:
     # Hemligheten används aldrig för PR:ar från forks.
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    outputs:
-      review: ${{ steps.codex.outputs.final-message }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
           persist-credentials: false
@@ -26,26 +24,60 @@ jobs:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: git fetch --no-tags origin "$BASE_REF" "+refs/pull/$PR_NUMBER/head"
-      - name: Låt Codex granska diffen
-        id: codex
-        uses: openai/codex-action@v1
-        with:
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          permission-profile: ':read-only'
-          prompt: |
-            Granska endast ändringarna i denna pull request. Leta efter buggar, trasiga deltagarlänkar,
-            säkerhetsrisker, regressionsrisker och saknade tester. Svara på svenska i korta punkter.
-            Skriv "Godkänd av agent" om du inte hittar något konkret.
-      - name: Publicera agentens granskning
-        if: steps.codex.outputs.final-message != ''
+      - name: Skapa granskning-instruktion
         uses: actions/github-script@v7
-        env:
-          REVIEW: ${{ steps.codex.outputs.final-message }}
         with:
           script: |
+            const { execSync } = require('child_process');
+            let diff = '';
+            try {
+              diff = execSync('git diff origin/main...HEAD', { encoding: 'utf8' }).slice(0, 8000);
+            } catch (e) {
+              diff = 'Kunde inte hämta diff';
+            }
+            
+            const instruction = \`# 🔍 Review-agent – Din instruktion
+
+**Pull request #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}**
+
+## Din uppgift
+Använd GitHub Copilot i VS Code för att granska denna pull request på kodkvalitet och risker.
+
+## Ändringar i PR:n
+\\\`\\\`\\\`diff
+\${diff}
+\\\`\\\`\\\`
+
+## Använd denna prompt med Copilot:
+\\\`\\\`\\\`
+Granska dessa ändringar från en pull request. Leta efter:
+- Buggar och logiska fel
+- Säkerhetsrisker
+- Regressionsrisker
+- Saknade tester
+- Dålig kodkvalitet
+- Trasiga eller saknade länklar
+
+Svara på svenska i korta punkter.
+Skriv "✅ Godkänd av agent" om du inte hittar något konkret problem.
+
+Ändringar:
+\${diff}
+\`\`\`
+
+## Nästa steg
+1. Kopiera prompt + diff ovan
+2. Öppna Copilot Chat i VS Code (Cmd+I)
+3. Klistra in och kör granskningen
+4. Läs agentens feedback
+5. Kommentera på PR:n med resultatet
+
+**OBS:** Denna instruktion är genererad automatiskt. GitHub Actions bygger denna prompt åt dig.
+\`;
+            
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
-              body: `## 🤖 Agentgranskning\n\n${process.env.REVIEW}`,
+              body: instruction,
             });
