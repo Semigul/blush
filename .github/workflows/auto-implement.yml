@@ -27,162 +27,44 @@ jobs:
             const title = issue.title.toLowerCase();
             const body = issue.body || '';
             
-            // Analysera issue-typen
             function getIssueType() {
-              if (title.includes('ta bort') || title.includes('radera') || title.includes('ta') && title.includes('bort')) return 'cleanup';
-              if (title.includes('fixa') || title.includes('bug') || title.includes('fel')) return 'bugfix';
+              if (title.includes('ta bort') || title.includes('radera')) return 'cleanup';
+              if (title.includes('fixa') || title.includes('bug')) return 'bugfix';
               if (title.includes('refactor')) return 'refactor';
               return 'feature';
             }
             
-            // Extrahera acceptance-criteria från body
-            function extractCriteria(body) {
-              const match = body.match(/## Acceptanskriterier\n([\s\S]*?)(?=##|$)/i);
-              if (!match) return [];
-              return match[1].split('\n').filter(line => line.trim().startsWith('-')).map(line => line.replace(/^-\s*/, '').trim());
-            }
-            
-            // Generera implementation-kommentar med code-tips
-            function generateImplementationGuide(type, title, criteria) {
-              const guides = {
-                cleanup: `## Implementeringsguide: Cleanup
-
-**Fokus:** Identifiera och ta bort överflödig kod/innehål.
-
-### Steg:
-1. Granska dessa acceptance-criteria:
-${criteria.map((c, i) => '   ' + (i+1) + '. ' + c).join('\n')}
-
-2. I ditt projekt:
-   - [ ] Analysera \`index.html\` för överflödig markup
-   - [ ] Kontrollera \`styles.css\` för oanvända stilar
-   - [ ] Granska \`app.js\` för död kod
-   - [ ] Kör \`npm test\` för att verifiera ändringar
-
-3. Börja med:
-   \`\`\`bash
-   git switch -c implement/issue-${issue.number}
-   # Gör dina ändringar
-   git add .
-   git commit -m "Cleanup: ${title}"
-   git push origin implement/issue-${issue.number}
-   \`\`\`
-
-4. PR-beskrivningen skapas automatiskt.`,
-
-                bugfix: `## Implementeringsguide: Bugfix
-
-**Fokus:** Åtgärda buggen enligt acceptance-kriterier.
-
-### Acceptance-kriterier:
-${criteria.map((c, i) => '- ' + c).join('\n')}
-
-### Steg:
-1. Identifiera rotorsaken i koden
-2. Applicera fix
-3. Verifiera med tests: \`npm test\`
-4. Kommit din fix:
-   \`\`\`bash
-   git switch -c implement/issue-${issue.number}
-   git add .
-   git commit -m "Fix: ${title}"
-   git push origin implement/issue-${issue.number}
-   \`\`\``,
-
-                feature: `## Implementeringsguide: Feature
-
-**Fokus:** Implementera ny funktionalitet.
-
-### Requirements:
-${criteria.map((c, i) => '- [ ] ' + c).join('\n')}
-
-### Implementation Steps:
-1. Planera arkitekturen
-2. Implementera funktionalitet
-3. Lägg till tests
-4. Skapa branch och commit:
-   \`\`\`bash
-   git switch -c implement/issue-${issue.number}
-   git add .
-   git commit -m "Feature: ${title}"
-   git push origin implement/issue-${issue.number}
-   \`\`\``,
-
-                refactor: `## Implementeringsguide: Refactor
-
-**Fokus:** Förbättra kodkvalitet utan att ändra funktionalitet.
-
-### Mål:
-${criteria.map((c, i) => '- ' + c).join('\n')}
-
-### Steg:
-1. Refaktorera relevant kod
-2. Kör alla tests: \`npm test\`
-3. Verifiera att beteendet är identiskt
-4. Commit:
-   \`\`\`bash
-   git switch -c implement/issue-${issue.number}
-   git add .
-   git commit -m "Refactor: ${title}"
-   git push origin implement/issue-${issue.number}
-   \`\`\``
-              };
-              
-              return guides[type] || guides.feature;
-            }
-            
             const issueType = getIssueType();
-            const criteria = extractCriteria(body);
-            const guide = generateImplementationGuide(issueType, title, criteria);
+            const guideSummary = {
+              cleanup: 'Fokus: Identifiera och ta bort överflödig kod/innehål enligt acceptance-criteria.',
+              bugfix: 'Fokus: Åtgärda buggen enligt acceptance-kriterier.',
+              feature: 'Fokus: Implementera ny funktionalitet.',
+              refactor: 'Fokus: Refaktorera relevant kod utan att ändra funktionalitet.'
+            };
             
-            // Skapa implementation-kommentar
+            const msg = 'Implementeringsguide för Issue #' + issueNum + '\n\n' +
+              '**Type:** ' + issueType.toUpperCase() + '\n\n' +
+              guideSummary[issueType] + '\n\n' +
+              'Story från issue:\n' + body + '\n\n' +
+              'Git-instruktioner:\n' +
+              'git switch -c implement/issue-' + issueNum + '\n' +
+              '# Gör dina ändringar\n' +
+              'git add .\n' +
+              'git commit -m "Implement issue #' + issueNum + '"\n' +
+              'git push origin implement/issue-' + issueNum;
+            
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNum,
-              body: guide
+              body: msg
             });
             
-            // Skapa och checkout branch
-            const branchName = 'implement/issue-' + issueNum;
-            
-            // Använd git CLI för att skapa branch
-            const { execSync } = require('child_process');
-            try {
-              execSync('git config user.name "github-actions[bot]"');
-              execSync('git config user.email "github-actions[bot]@users.noreply.github.com"');
-              execSync('git checkout -b ' + branchName);
-              
-              // Skapa en implementation-fil med instruktioner
-              const fs = require('fs');
-              const implFile = 'IMPLEMENTATION_ISSUE_' + issueNum + '.md';
-              fs.writeFileSync(implFile, '# Implementation för Issue #' + issueNum + '\n\n' + guide + '\n\n---\n\n**Bot-genererad fil. Denna kan raderas när implementering är klar.**');
-              
-              execSync('git add ' + implFile);
-              execSync('git commit -m "Start implementation: issue #' + issueNum + ' - ' + title + '"');
-              execSync('git push -u origin ' + branchName);
-              
-              console.log('Branch created and pushed: ' + branchName);
-            } catch (error) {
-              console.log('Git operations: ' + error.message);
-            }
-            
-            // Skapa PR
-            const pr = await github.rest.pulls.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              head: branchName,
-              base: 'main',
-              title: '[WIP] Implement: ' + title,
-              body: `## Issue #${issueNum}: ${title}\n\n${guide}\n\n---\n\n**Status:** Ready for implementation\n**Auto-generated PR** - Review implementation guide above and implement the changes.`
-            });
-            
-            console.log('PR created: ' + pr.data.html_url);
-            
-            // Lägg label
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNum,
               labels: ['awaiting-implementation']
             });
+            
+            console.log('Implementation guide posted for issue #' + issueNum);
