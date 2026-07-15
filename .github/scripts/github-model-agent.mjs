@@ -169,14 +169,18 @@ Regler:
   }
 
   function isUnifiedDiff(value) {
-    return value.startsWith('diff --git ') || /^--- a\/[^\n]+\n\+\+\+ b\//.test(value);
+    const hasHeader = value.startsWith('diff --git ') || /^--- a\/[^\n]+\n\+\+\+ b\//.test(value);
+    const hasFileMarkers = /^--- (?:a\/[^\n]+|\/dev\/null)$/m.test(value)
+      && /^\+\+\+ (?:b\/[^\n]+|\/dev\/null)$/m.test(value);
+    const hasHunk = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@/m.test(value);
+    return hasHeader && hasFileMarkers && hasHunk;
   }
 
   let rawResponse = await callModel(prompt);
   let patch = normalizePatch(rawResponse);
 
   if (!isUnifiedDiff(patch)) {
-    rawResponse = await callModel(`${prompt}\n\nVIKTIGT: Ditt föregående svar var inte en unified diff. Försök igen. Första raden måste vara exakt i formatet "diff --git a/sökväg b/sökväg". Skriv ingen inledning, sammanfattning eller Markdown.`);
+    rawResponse = await callModel(`${prompt}\n\nVIKTIGT: Ditt föregående svar var inte en applicerbar unified diff. Försök igen. Första raden måste vara exakt i formatet "diff --git a/sökväg b/sökväg". Varje filändring måste innehålla raderna "--- a/sökväg", "+++ b/sökväg" och minst ett riktigt hunk-huvud i formatet "@@ -gammalrad,antal +nyrad,antal @@" följt av ändrade kodrader. Skriv ingen inledning, sammanfattning, platshållare eller Markdown.`);
     patch = normalizePatch(rawResponse);
   }
 
