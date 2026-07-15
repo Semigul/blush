@@ -10,8 +10,8 @@ permissions:
 
 jobs:
   prepare-implement:
-    # Kör endast när repoägaren uttryckligen aktiverar en story.
-    if: github.event.label.name == 'agent:ready' && github.actor == 'Semigul' && github.event.issue.pull_request == null
+    # Triggeras när agent:ready-label läggs till
+    if: github.event.label.name == 'agent:ready'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

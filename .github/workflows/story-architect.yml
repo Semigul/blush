@@ -10,8 +10,8 @@ permissions:
 
 jobs:
   prepare-story:
-    # Bara repoägaren kan starta Story Architect.
-    if: github.event.label.name == 'story:expand' && github.actor == 'Semigul' && github.event.issue.pull_request == null
+    # Triggeras när story:expand-label läggs till
+    if: github.event.label.name == 'story:expand'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
