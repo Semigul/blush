@@ -13,54 +13,20 @@ jobs:
     if: github.event.label.name == 'story:expand'
     runs-on: ubuntu-latest
     steps:
-      - name: Skapa story-instruktion
-        uses: actions/github-script@v7
+      - uses: actions/github-script@v7
         with:
           script: |
             const issue = context.payload.issue;
-            const body = `Story Architect - Instruktion for Issue #${issue.number}
-
-Titel: ${issue.title}
-
-Använd denna prompt i Copilot:
-
-Skapa ett tydligt story-förslag på svenska för Blush & Bluff.
-
-## Mål
-[Här ska målet stå]
-
-## Bakgrund  
-[Här ska bakgrunden stå]
-
-## Omfattning
-[Här ska omfattningen stå]
-
-## Utanför omfattning
-[Här ska utanför-scope stå]
-
-## Acceptanskriterier
-[Här ska acceptanskriterier stå]
-
-## Testplan
-[Här ska testplan stå]
-
-## Risker
-[Här ska risker stå]
-
-## Öppna frågor
-[Här ska öppna frågor stå]
-`;
-
+            const msg = 'Story Architect aktiverad! Skapa story med: Mal, Bakgrund, Omfattning, Acceptanskriterier, Testplan, Risker, Oppna fragor';
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue.number,
-              body: body,
+              body: msg
             });
-            
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue.number,
-              labels: ['awaiting-story-draft'],
+              labels: ['awaiting-story-draft']
             });
