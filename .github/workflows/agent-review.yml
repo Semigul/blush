@@ -29,6 +29,7 @@ jobs:
         with:
           script: |
             const { execSync } = require('child_process');
+            const pr = context.payload.pull_request;
             let diff = '';
             try {
               diff = execSync('git diff origin/main...HEAD', { encoding: 'utf8' }).slice(0, 8000);
@@ -36,20 +37,20 @@ jobs:
               diff = 'Kunde inte hämta diff';
             }
             
-            const instruction = \`# 🔍 Review-agent – Din instruktion
+            const instruction = `# 🔍 Review-agent – Din instruktion
 
-**Pull request #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}**
+**Pull request #${pr.number}: ${pr.title}**
 
 ## Din uppgift
 Använd GitHub Copilot i VS Code för att granska denna pull request på kodkvalitet och risker.
 
 ## Ändringar i PR:n
-\\\`\\\`\\\`diff
-\${diff}
-\\\`\\\`\\\`
+\`\`\`diff
+${diff}
+\`\`\`
 
 ## Använd denna prompt med Copilot:
-\\\`\\\`\\\`
+\`\`\`
 Granska dessa ändringar från en pull request. Leta efter:
 - Buggar och logiska fel
 - Säkerhetsrisker
@@ -62,7 +63,7 @@ Svara på svenska i korta punkter.
 Skriv "✅ Godkänd av agent" om du inte hittar något konkret problem.
 
 Ändringar:
-\${diff}
+${diff}
 \`\`\`
 
 ## Nästa steg
@@ -73,7 +74,7 @@ Skriv "✅ Godkänd av agent" om du inte hittar något konkret problem.
 5. Kommentera på PR:n med resultatet
 
 **OBS:** Denna instruktion är genererad automatiskt. GitHub Actions bygger denna prompt åt dig.
-\`;
+`;
             
             await github.rest.issues.createComment({
               owner: context.repo.owner,
