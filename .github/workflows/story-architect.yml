@@ -14,20 +14,14 @@ jobs:
     if: github.event.label.name == 'story:expand'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
       - name: Skapa story-instruktion för GitHub Copilot
         uses: actions/github-script@v7
-        env:
-          ISSUE_TITLE: ${{ github.event.issue.title }}
-          ISSUE_BODY: ${{ github.event.issue.body }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
         with:
           script: |
+            const issue = context.payload.issue;
             const instruction = `# 📋 Story Architect – Din instruktion
 
-**Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}**
+**Issue #${issue.number}: ${issue.title}**
 
 ## Din uppgift
 Använd GitHub Copilot i VS Code för att skapa ett komplett story-utkast baserat på denna one-liner.
@@ -47,10 +41,10 @@ Svara ENDAST i följande Markdown-struktur:
 ## Öppna frågor
 
 One-liner:
-${{ github.event.issue.title }}
+${issue.title}
 
 Detaljer:
-${{ github.event.issue.body || 'Ingen ytterligare info' }}
+${issue.body || 'Ingen ytterligare info'}
 
 Hitta inte på produktkrav. Om information saknas, skriv en fråga under Öppna frågor.
 \`\`\`
@@ -60,27 +54,27 @@ Hitta inte på produktkrav. Om information saknas, skriv en fråga under Öppna 
 2. Öppna Copilot Chat i VS Code (Cmd+I)
 3. Klistra in prompten och kör den
 4. Kopiera resultatet
-5. Gå tillbaka till Issue #${{ github.event.issue.number }} och uppdatera Issue-body med story-utkastet
+5. Gå tillbaka till Issue #${issue.number} och uppdatera Issue-body med story-utkastet
 6. Lägg etikett \`story\` när du är nöjd
 `;
             
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.issue.number,
+              issue_number: issue.number,
               body: instruction,
             });
             
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.issue.number,
+              issue_number: issue.number,
               labels: ['awaiting-story-draft'],
             });
             
             await github.rest.issues.removeLabel({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.issue.number,
+              issue_number: issue.number,
               name: 'story:expand',
             });
