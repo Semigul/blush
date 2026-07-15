@@ -37,7 +37,7 @@ jobs:
               diff = 'Kunde inte hämta diff';
             }
             
-            const instruction = `# 🔍 Review-agent – Din instruktion
+            const instruction = `# Review-agent - Din instruktion
 
 **Pull request #${pr.number}: ${pr.title}**
 
@@ -60,7 +60,7 @@ Granska dessa ändringar från en pull request. Leta efter:
 - Trasiga eller saknade länklar
 
 Svara på svenska i korta punkter.
-Skriv "✅ Godkänd av agent" om du inte hittar något konkret problem.
+Skriv "Godkänd av agent" om du inte hittar något konkret problem.
 
 Ändringar:
 ${diff}

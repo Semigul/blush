@@ -19,7 +19,7 @@ jobs:
         with:
           script: |
             const issue = context.payload.issue;
-            const instruction = `# 🛠️ Implementeringsagent – Din instruktion
+            const instruction = `# Implementeringsagent - Din instruktion
 
 **Issue #${issue.number}: ${issue.title}**
 

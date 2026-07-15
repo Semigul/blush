@@ -19,7 +19,7 @@ jobs:
         with:
           script: |
             const issue = context.payload.issue;
-            const instruction = `# 📋 Story Architect – Din instruktion
+            const instruction = `# Story Architect - Din instruktion
 
 **Issue #${issue.number}: ${issue.title}**
 
