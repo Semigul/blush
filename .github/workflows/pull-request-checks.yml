@@ -17,6 +17,7 @@ jobs:
           node-version: 22
       - name: Kontrollera webbplatsen
         run: |
+          node .github/scripts/model-edits.test.mjs
           node --check app.js
           node --input-type=module -e "JSON.parse(await (await import('node:fs/promises')).readFile('manifest.webmanifest', 'utf8'))"
           test -f index.html
